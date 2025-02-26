@@ -1,50 +1,33 @@
-# Welcome to your Expo app 👋
+# 4-Second Video Recorder App
+A React Native application designed to capture, store, and view short 4-second video moments. Made with ReactNative and Expo.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Features
+-Video Recording: Capture 4-second moments with a countdown timer and various animations to enhance the recording experience.
 
-## Get started
+-Gallery View: Organize and view recorded videos in a responsive grid layout with playback and delete options.
 
-1. Install dependencies
+-Video Player: Watch videos with playback controls and share options in a dedicated player screen.
 
-   ```bash
-   npm install
-   ```
+## Screenshots
+![image](https://github.com/user-attachments/assets/619183bf-d4b8-4a32-b157-d02980856a60)
+![image](https://github.com/user-attachments/assets/50537b89-38d2-4588-8b49-01a328ceefa2)
+![image](https://github.com/user-attachments/assets/d73eadec-7509-4dbb-8caa-35b14b29180e)
 
-2. Start the app
+## How to run
 
-   ```bash
-    npx expo start
-   ```
+- Step 1: npm install (in root folder)
+- Step 2: npx expo run:android (in root folder) OR npx expo run:ios (in root folder, if you have MacOS with Xcode)
+- Step 3: Open your emulator and use the App.
 
-In the output, you'll find options to open the app in a
+## Dependencies
+react-native
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+react-native-vision-camera (for camera functionality)
 
-## Get a fresh project
+expo-av (for video playback)
 
-When you're ready, run:
+expo-linear-gradient
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+@expo/vector-icons (for icons)
