@@ -1,5 +1,5 @@
 # 4-Second Video Recorder App
-A React Native application designed to capture, store, and view short 4-second video moments. The app leverages React Native, Expo, and modern UI components to create a seamless and engaging user experience.
+A React Native application designed to capture, store, and view short 4-second video moments. Made with ReactNative and Expo.
 
 ## Features
 Video Recording: Capture 4-second moments with a countdown timer and various animations to enhance the recording experience.
