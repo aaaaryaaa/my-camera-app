@@ -13,6 +13,11 @@ A React Native application designed to capture, store, and view short 4-second v
 ![image](https://github.com/user-attachments/assets/50537b89-38d2-4588-8b49-01a328ceefa2)
 ![image](https://github.com/user-attachments/assets/d73eadec-7509-4dbb-8caa-35b14b29180e)
 
+## How to run
+
+- Step 1: npm install (in root folder)
+- Step 2: npx expo run:android (in root folder) OR npx expo run:ios (in root folder, if you have MacOS with Xcode)
+- Step 3: Open your emulator and use the App.
 
 ## Dependencies
 react-native
