@@ -8,7 +8,10 @@ A React Native application designed to capture, store, and view short 4-second v
 
 -Video Player: Watch videos with playback controls and share options in a dedicated player screen.
 
-## Screenshots
+## Recording and Screenshots
+
+https://github.com/user-attachments/assets/641c413e-c79f-4e78-9852-36a8f486f024
+
 ![image](https://github.com/user-attachments/assets/619183bf-d4b8-4a32-b157-d02980856a60)
 ![image](https://github.com/user-attachments/assets/50537b89-38d2-4588-8b49-01a328ceefa2)
 ![image](https://github.com/user-attachments/assets/d73eadec-7509-4dbb-8caa-35b14b29180e)
