@@ -16,6 +16,10 @@ https://github.com/user-attachments/assets/641c413e-c79f-4e78-9852-36a8f486f024
 ![image](https://github.com/user-attachments/assets/50537b89-38d2-4588-8b49-01a328ceefa2)
 ![image](https://github.com/user-attachments/assets/d73eadec-7509-4dbb-8caa-35b14b29180e)
 
+## APK File
+
+https://drive.google.com/drive/u/0/folders/1UCic4BO6spbjAhG43-Uk60wo7avn0Cla
+
 ## How to run
 
 - Step 1: npm install (in root folder)
