@@ -463,224 +463,89 @@ const CameraScreen = ({ navigateTo, onVideoSaved }: {
   );
 };
 
-// Gallery Screen Component
-const GalleryScreen = ({ navigateTo, videoList, onVideoSelect }: {
+// Sequential Video Gallery Screen Component
+const GalleryScreen = ({ navigateTo, videoList }: {
   navigateTo: (screen: string) => void,
-  videoList: string[],
-  onVideoSelect: (videoUri: string) => void
+  videoList: string[]
 }) => {
-  const [refreshing, setRefreshing] = useState(false);
-  const scrollY = useRef(new Animated.Value(0)).current;
-
-  const refreshList = async () => {
-    setRefreshing(true);
-    // Simulate refresh delay
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
-
-  const renderThumbnail = ({ item, index }: { item: string, index: number }) => {
-    // Alternating animation delay for staggered effect
-    const delay = index % 2 === 0 ? 0 : 100;
-    
-    return (
-      <Animated.View
-        style={{
-          opacity: scrollY.interpolate({
-            inputRange: [-100, 0, (index * 160)],
-            outputRange: [1, 1, 1],
-            extrapolate: 'clamp'
-          }),
-          transform: [{
-            scale: scrollY.interpolate({
-              inputRange: [-100, 0, (index * 160)],
-              outputRange: [1, 1, 0.9],
-              extrapolate: 'clamp'
-            })
-          }]
-        }}
-      >
-        <TouchableOpacity
-          style={styles.videoThumbnail}
-          onPress={() => onVideoSelect(item)}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={['#6a11cb', '#2575fc']}
-            style={styles.thumbnailGradient}
-          >
-            <Text style={styles.thumbnailDuration}>4s</Text>
-            <View style={styles.thumbnailOverlay}>
-              <MaterialCommunityIcons name="play-circle-outline" size={46} color="white" />
-            </View>
-          </LinearGradient>
-          <View style={styles.thumbnailFooter}>
-            <Text style={styles.thumbnailText}>
-              Moment {videoList.length - index}
-            </Text>
-            <Text style={styles.thumbnailDate}>
-              {new Date().toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
-
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 50, 100],
-    outputRange: [1, 0.9, 0.8],
-    extrapolate: 'clamp'
-  });
-
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [120, 80],
-    extrapolate: 'clamp'
-  });
-
-  return (
-    <View style={styles.galleryContainer}>
-      <Animated.View 
-        style={[
-          styles.galleryHeader,
-          { 
-            opacity: headerOpacity 
-          }
-        ]}
-      >
-        <LinearGradient
-          colors={['#1a1a2e', '#121212']}
-          style={styles.galleryHeaderGradient}
-        >
-          <Text style={styles.galleryTitle}>My Moments</Text>
-          <Text style={styles.gallerySubtitle}>
-            {videoList.length} {videoList.length === 1 ? 'video' : 'videos'} captured
-          </Text>
-        </LinearGradient>
-      </Animated.View>
-      
-      {videoList.length === 0 ? (
-        <View style={styles.emptyGallery}>
-          <Image 
-            source={{ uri: 'https://api.a0.dev/assets/image?text=empty%20video%20collection%20illustration&aspect=1:1&seed=565' }} 
-            style={styles.emptyGalleryImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.emptyGalleryText}>Your gallery is empty</Text>
-          <Text style={styles.emptyGallerySubtext}>
-            Start capturing short 4-second moments to preserve your memories
-          </Text>
-          <TouchableOpacity 
-            style={styles.recordNowButton}
-            onPress={() => navigateTo('CameraScreen')}
-            activeOpacity={0.8}
-          >
-            <Feather name="video" size={18} color="white" style={styles.recordNowButtonIcon} />
-            <Text style={styles.recordNowButtonText}>Record Your First Moment</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <Animated.FlatList
-          data={videoList.slice().reverse()}
-          renderItem={renderThumbnail}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={2}
-          contentContainerStyle={styles.galleryList}
-          refreshing={refreshing}
-          onRefresh={refreshList}
-          showsVerticalScrollIndicator={false}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-          scrollEventThrottle={16}
-        />
-      )}
-    </View>
-  );
-};
-
-// Video Player Screen
-const VideoPlayerScreen = ({ navigateTo, videoUri, onDeleteVideo }: {
-  navigateTo: (screen: string) => void,
-  videoUri: string | null,
-  onDeleteVideo: (videoUri: string) => void
-}) => {
-  const videoRef = useRef<Video>(null);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [status, setStatus] = useState({
-    isPlaying: false,
+    isPlaying: true,
     isLoaded: false,
     error: false,
     positionMillis: 0,
     durationMillis: 0
   });
-  
-  // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const videoRef = useRef<Video>(null);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [controlsVisible, setControlsVisible] = useState(true);
   const controlsOpacity = useRef(new Animated.Value(1)).current;
   
-  // Progress bar animation
+  // Progress animation
   const progressAnimation = useRef(new Animated.Value(0)).current;
+  
+  // Calculate total duration of all videos (assuming each is 4 seconds)
+  const totalDuration = videoList.length * 4000; // 4 seconds per video in milliseconds
+  
   const progressInterpolation = progressAnimation.interpolate({
-    inputRange: [0, 4000], // 4 seconds in milliseconds
+    inputRange: [0, totalDuration],
     outputRange: [0, 100],
     extrapolate: 'clamp'
   });
   
+  // Handle video completion and move to next video
   useEffect(() => {
-    // Fade in animation when component mounts
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true
-    }).start();
+    if (videoList.length === 0) return;
     
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.unloadAsync();
+    const hideControlsTimeout = setTimeout(() => {
+      if (status.isPlaying && controlsVisible) {
+        fadeOutControls();
+      }
+    }, 3000);
+    
+    return () => clearTimeout(hideControlsTimeout);
+  }, [status.isPlaying, controlsVisible]);
+  
+  // Automatically advance to next video when current one finishes
+  useEffect(() => {
+    const handleVideoFinish = async (playbackStatus: any) => {
+      if (playbackStatus.isLoaded && 
+          playbackStatus.didJustFinish && 
+          currentVideoIndex < videoList.length - 1) {
+        // Move to next video
+        setCurrentVideoIndex(prevIndex => prevIndex + 1);
       }
     };
-  }, []);
-  
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
     
-    // Auto-hide controls after 3 seconds if playing
-    if (status.isPlaying) {
-      timeout = setTimeout(() => {
-        Animated.timing(controlsOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true
-        }).start();
-      }, 3000);
-    } else {
-      // Show controls when paused
-      Animated.timing(controlsOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true
-      }).start();
+    if (videoRef.current) {
+      videoRef.current.setOnPlaybackStatusUpdate(handleVideoFinish);
     }
-    
-    return () => clearTimeout(timeout);
-  }, [status.isPlaying]);
+  }, [currentVideoIndex, videoList]);
+  
+  const fadeOutControls = () => {
+    Animated.timing(controlsOpacity, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true
+    }).start(() => {
+      setControlsVisible(false);
+    });
+  };
+  
+  const fadeInControls = () => {
+    setControlsVisible(true);
+    Animated.timing(controlsOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true
+    }).start();
+  };
   
   const toggleControls = () => {
-    if (controlsOpacity._value === 0) {
-      Animated.timing(controlsOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true
-      }).start();
-    } else if (status.isPlaying) {
-      Animated.timing(controlsOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true
-      }).start();
+    if (controlsVisible) {
+      fadeOutControls();
+    } else {
+      fadeInControls();
     }
   };
   
@@ -694,101 +559,138 @@ const VideoPlayerScreen = ({ navigateTo, videoUri, onDeleteVideo }: {
     }
   };
   
-  const handleDeleteVideo = () => {
-    if (!videoUri) return;
-    
-    Alert.alert(
-      "Delete Moment",
-      "Are you sure you want to delete this moment?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive",
-          onPress: () => {
-            if (videoUri) {
-              // Fade out animation before delete
-              Animated.timing(fadeAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true
-              }).start(() => {
-                onDeleteVideo(videoUri);
-              });
-            }
-          }
-        }
-      ]
-    );
+  const goToPreviousVideo = () => {
+    if (currentVideoIndex > 0) {
+      setCurrentVideoIndex(prevIndex => prevIndex - 1);
+    }
   };
   
-  if (!videoUri) {
+  const goToNextVideo = () => {
+    if (currentVideoIndex < videoList.length - 1) {
+      setCurrentVideoIndex(prevIndex => prevIndex + 1);
+    }
+  };
+  
+  // Calculate overall progress including all previous videos
+  const calculateOverallProgress = () => {
+    const previousVideosTime = currentVideoIndex * 4000; // 4 seconds per video
+    const currentVideoTime = status.positionMillis;
+    return previousVideosTime + currentVideoTime;
+  };
+  
+  // Update progress whenever video position changes
+  useEffect(() => {
+    if (status.isLoaded) {
+      const overallProgress = calculateOverallProgress();
+      progressAnimation.setValue(overallProgress);
+    }
+  }, [status.positionMillis, currentVideoIndex]);
+  
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: [1, 0.9, 0.8],
+    extrapolate: 'clamp'
+  });
+  
+  if (videoList.length === 0) {
     return (
-      <View style={styles.videoErrorContainer}>
-        <Ionicons name="alert-circle-outline" size={80} color="#e74c3c" />
-        <Text style={styles.videoErrorTitle}>Video Not Found</Text>
-        <Text style={styles.videoErrorText}>The selected video could not be loaded</Text>
+      <View style={styles.emptyGallery}>
+        <Image 
+          source={{ uri: 'https://api.a0.dev/assets/image?text=empty%20video%20collection%20illustration&aspect=1:1&seed=565' }} 
+          style={styles.emptyGalleryImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.emptyGalleryText}>Your gallery is empty</Text>
+        <Text style={styles.emptyGallerySubtext}>
+          Start capturing short 4-second moments to preserve your memories
+        </Text>
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigateTo('GalleryScreen')}
+          style={styles.recordNowButton}
+          onPress={() => navigateTo('CameraScreen')}
           activeOpacity={0.8}
         >
-          <Text style={styles.backButtonText}>Back to Gallery</Text>
+          <Feather name="video" size={18} color="white" style={styles.recordNowButtonIcon} />
+          <Text style={styles.recordNowButtonText}>Record Your First Moment</Text>
         </TouchableOpacity>
       </View>
     );
   }
   
   return (
-    <Animated.View 
-      style={[
-        styles.videoPlayerContainer,
-        { opacity: fadeAnim }
-      ]}
-    >
+    <View style={styles.galleryContainer}>
+      <Animated.View 
+        style={[
+          styles.galleryHeader,
+          { 
+            opacity: controlsVisible ? headerOpacity : 0,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10
+          }
+        ]}
+      >
+        <LinearGradient
+          colors={['#1a1a2e', 'transparent']}
+          style={styles.galleryHeaderGradient}
+        >
+          <View style={styles.galleryTitleContainer}>
+            <Text style={styles.galleryTitle}>My Story</Text>
+            <Text style={styles.gallerySubtitle}>
+              {videoList.length} {videoList.length === 1 ? 'moment' : 'moments'} • {Math.floor(totalDuration/1000)}s
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.cameraButton}
+            onPress={() => navigateTo('CameraScreen')}
+          >
+            <Feather name="plus" size={24} color="white" />
+          </TouchableOpacity>
+        </LinearGradient>
+      </Animated.View>
+    
       {/* Video player */}
       <TouchableOpacity 
         activeOpacity={1}
         style={styles.videoPlayerWrapper}
         onPress={toggleControls}
       >
-        <Video
-          ref={videoRef}
-          style={styles.videoPlayer}
-          source={{ uri: videoUri }}
-          useNativeControls={false}
-          resizeMode="cover"
-          isLooping
-          shouldPlay={true}
-          onPlaybackStatusUpdate={(status) => {
-            if (status.isLoaded) {
-              setStatus({
-                isPlaying: status.isPlaying,
-                isLoaded: true,
-                error: false,
-                positionMillis: status.positionMillis,
-                durationMillis: status.durationMillis || 4000
-              });
-              
-              // Update progress animation
-              progressAnimation.setValue(status.positionMillis);
-            } else {
-              setStatus({
-                isPlaying: false,
-                isLoaded: false,
-                error: true,
-                positionMillis: 0,
-                durationMillis: 0
-              });
-            }
-          }}
-        />
+        {videoList.length > 0 && (
+          <Video
+            ref={videoRef}
+            style={styles.videoPlayer}
+            source={{ uri: videoList[currentVideoIndex] }}
+            useNativeControls={false}
+            resizeMode="cover"
+            shouldPlay={true}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.isLoaded) {
+                setStatus({
+                  isPlaying: status.isPlaying,
+                  isLoaded: true,
+                  error: false,
+                  positionMillis: status.positionMillis,
+                  durationMillis: status.durationMillis || 4000
+                });
+              } else {
+                setStatus({
+                  isPlaying: false,
+                  isLoaded: false,
+                  error: true,
+                  positionMillis: 0,
+                  durationMillis: 0
+                });
+              }
+            }}
+          />
+        )}
         
         {/* Loading indicator */}
         {!status.isLoaded && (
           <View style={styles.videoLoadingOverlay}>
             <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.loadingText}>Loading your moment...</Text>
+            <Text style={styles.loadingText}>Loading your moments...</Text>
           </View>
         )}
         
@@ -802,60 +704,7 @@ const VideoPlayerScreen = ({ navigateTo, videoUri, onDeleteVideo }: {
           </View>
         )}
         
-        {/* Header controls */}
-        <Animated.View 
-          style={[
-            styles.videoPlayerHeader,
-            { opacity: controlsOpacity }
-          ]}
-        >
-          <LinearGradient
-            colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0)']}
-            style={styles.videoHeaderGradient}
-          >
-            <TouchableOpacity 
-              style={styles.videoPlayerBackButton}
-              onPress={() => navigateTo('GalleryScreen')}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="chevron-back" size={28} color="white" />
-              <Text style={styles.videoPlayerBackText}>Gallery</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.videoPlayerDeleteButton}
-              onPress={handleDeleteVideo}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="delete-outline" size={28} color="white" />
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
-        
-        {/* Center play/pause button */}
-        <Animated.View 
-          style={[
-            styles.videoControlOverlay,
-            { 
-              opacity: controlsOpacity.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, status.isPlaying ? 0 : 1]
-              })
-            }
-          ]}
-        >
-          {!status.isPlaying && status.isLoaded && (
-            <TouchableOpacity
-              onPress={handlePlayPause}
-              style={styles.bigPlayButton}
-              activeOpacity={0.9}
-            >
-              <Ionicons name="play" size={40} color="white" />
-            </TouchableOpacity>
-          )}
-        </Animated.View>
-        
-        {/* Bottom controls */}
+        {/* Video controls */}
         <Animated.View 
           style={[
             styles.videoPlayerControls,
@@ -866,9 +715,23 @@ const VideoPlayerScreen = ({ navigateTo, videoUri, onDeleteVideo }: {
             colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.8)']}
             style={styles.videoControlsGradient}
           >
-            {/* Progress bar */}
+            {/* Progress bar with segments for each video */}
             <View style={styles.videoProgressContainer}>
-              <View style={styles.videoProgressBackground} />
+              <View style={styles.videoProgressBackground}>
+                {/* Video segment indicators */}
+                {videoList.map((_, index) => (
+                  <View 
+                    key={index}
+                    style={[
+                      styles.videoSegmentMarker,
+                      { 
+                        left: `${(index / videoList.length) * 100}%`,
+                        backgroundColor: index === currentVideoIndex ? '#2575fc' : 'rgba(255,255,255,0.5)'
+                      }
+                    ]}
+                  />
+                ))}
+              </View>
               <Animated.View 
                 style={[
                   styles.videoProgress,
@@ -890,9 +753,33 @@ const VideoPlayerScreen = ({ navigateTo, videoUri, onDeleteVideo }: {
                 />
               </TouchableOpacity>
               
-              <Text style={styles.videoDuration}>
-                00:0{Math.floor(status.positionMillis / 1000)}/{Math.floor(status.durationMillis / 1000)}s
-              </Text>
+              <View style={styles.videoNavigationControls}>
+                <TouchableOpacity 
+                  style={[
+                    styles.videoNavButton,
+                    currentVideoIndex === 0 && styles.videoNavButtonDisabled
+                  ]}
+                  onPress={goToPreviousVideo}
+                  disabled={currentVideoIndex === 0}
+                >
+                  <Ionicons name="play-skip-back" size={22} color="white" />
+                </TouchableOpacity>
+                
+                <Text style={styles.videoCounter}>
+                  {currentVideoIndex + 1}/{videoList.length}
+                </Text>
+                
+                <TouchableOpacity 
+                  style={[
+                    styles.videoNavButton,
+                    currentVideoIndex === videoList.length - 1 && styles.videoNavButtonDisabled
+                  ]}
+                  onPress={goToNextVideo}
+                  disabled={currentVideoIndex === videoList.length - 1}
+                >
+                  <Ionicons name="play-skip-forward" size={22} color="white" />
+                </TouchableOpacity>
+              </View>
               
               <TouchableOpacity 
                 style={styles.videoShareButton}
@@ -903,8 +790,21 @@ const VideoPlayerScreen = ({ navigateTo, videoUri, onDeleteVideo }: {
             </View>
           </LinearGradient>
         </Animated.View>
+        
+        {/* Center play/pause button for when video is paused */}
+        {!status.isPlaying && status.isLoaded && controlsVisible && (
+          <View style={styles.bigPlayButtonContainer}>
+            <TouchableOpacity
+              onPress={handlePlayPause}
+              style={styles.bigPlayButton}
+              activeOpacity={0.9}
+            >
+              <Ionicons name="play" size={40} color="white" />
+            </TouchableOpacity>
+          </View>
+        )}
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 };
 
